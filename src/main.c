@@ -5,7 +5,6 @@
 
 int main() {
     Tarefas tarefas = NULL;
-    // int count = 0;
     readCommand(&tarefas);
     return 0;
 }
