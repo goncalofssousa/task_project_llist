@@ -11,7 +11,7 @@ void lerString(char *dest, int max) {
 
         if (strlen(dest) == max - 1 && dest[max - 2] != '\n') {
             int c;
-            while ((c = getchar()) != '\n' && c != EOF); // limpa stdin
+            while ((c = getchar()) != '\n' && c != EOF); 
         }
     }
 }
@@ -79,6 +79,7 @@ void handleNewTask(Tarefas *tarefas) {
     consoleMessage("Tarefa adicionada com sucesso"); 
 }
 
+
 void newTask(Tarefas *tarefas, char *prioridadeStr, int prioridade,char *title, char *descr){
  
     Tarefas novaTarefa = malloc(sizeof(struct lligada));
@@ -106,22 +107,64 @@ void newTask(Tarefas *tarefas, char *prioridadeStr, int prioridade,char *title, 
 }
 
 void showTasks(Tarefas *tarefas){
-    Tarefas tmp = *tarefas;
-    printf("=== Lista de Tarefas ===\n"); 
-    printf("\n"); 
-    while(tmp != NULL){
-        printf("=== Tarefa %d ===\n", tmp->num); 
-        printf("Titulo: %s\n", (tmp)->title);
-        if((tmp)->str[0] == '\0'){
-            printf("Sem descrição\n"); 
-        } else {
-            printf("Descrição: %s\n", (tmp)->str);
-        }
-        printf("Prioridade: %s\n", (tmp)->prioridadeStr);
-        tmp = tmp->prox;
-        printf("\n"); 
+    if(*tarefas == NULL){
+        consoleMessage("Lista de tarefas vazia"); 
     }
-    getchar(); 
+    else{
+        Tarefas tmp = *tarefas;
+        printf("=== Lista de Tarefas ===\n"); 
+        printf("\n"); 
+        while(tmp != NULL){
+            printf("=== Tarefa %d ===\n", tmp->num); 
+            printf("Titulo: %s\n", (tmp)->title);
+            if((tmp)->str[0] == '\0'){
+                printf("Sem descrição\n"); 
+            } else {
+                printf("Descrição: %s\n", (tmp)->str);
+            }
+            printf("Prioridade: %s\n", (tmp)->prioridadeStr);
+            tmp = tmp->prox;
+            printf("\n"); 
+        }
+        getchar(); 
+    }
+}
+
+void removeTask(Tarefas *tarefas){
+    if(*tarefas == NULL) {
+            consoleMessage("Nao ha tarefas a remover..");
+            return;
+    }
+    int num = -1;
+    int times = 0; 
+    int flag = 0; 
+    do{
+        if(times > 0){
+            consoleMessage("Numero invalido"); 
+        }
+        system("clear");
+        printf("=== Remover Tarefa ===\n"); 
+        printf("Digite o numero da tarefa a remover: "); 
+        scanf("%d", &num); 
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+        Tarefas *tmp = tarefas;
+        if(num != -1){
+            while(*tmp != NULL){
+                if((*tmp)->num == num){
+                    Tarefas tmp2 = *tmp; 
+                    *tmp = (*tmp)->prox;
+                    free(tmp2); 
+                    flag = 1; 
+                    break; 
+                }
+                tmp = &((*tmp)->prox); 
+            }
+        }
+        times++; 
+    } 
+    while(num == -1 || !flag);  
+    consoleMessage("Tarefa removida com sucesso"); 
 }
 
 void handleCommand(char *command, Tarefas *tarefas){
@@ -135,7 +178,7 @@ void handleCommand(char *command, Tarefas *tarefas){
             showTasks(tarefas); 
             break;
         case '3':
-            //remover tarefa
+            removeTask(tarefas); 
             break;
         case '4':
             //marcar como concluida
