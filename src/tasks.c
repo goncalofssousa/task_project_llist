@@ -5,64 +5,100 @@
 #include <string.h>
 
 
+void lerString(char *dest, int max) {
+    if (fgets(dest, max, stdin) != NULL) {
+        dest[strcspn(dest, "\n")] = '\0';
+
+        if (strlen(dest) == max - 1 && dest[max - 2] != '\n') {
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF); // limpa stdin
+        }
+    }
+}
 
 
-void handleNewTask(Tarefas *tarefas, int *count) {
+void handleNewTask(Tarefas *tarefas) {
     char str[101] = ""; 
     char title[51] = ""; 
-    int prioridade = 0; 
+    char prioridadeStr[10] = ""; 
+    int prioridade =0 ; 
+    int flagError = 0; 
     int times = 0; 
-    int c; 
 
     do {
+        flagError = 0; 
         if (times > 0) {
             consoleMessage("Tarefa invalida, tenta de novo");
         } 
 
         system("clear"); 
-        printf("=== Adicionar Tarefas ===\n"); 
+        printf("=== Adicionar Tarefas (ESC+ENTER para cancelar) ===\n"); 
 
         printf("Titulo da tarefa (max: 50 chars): ");  
-        fgets(title, sizeof(title), stdin);
-        title[strcspn(title, "\n")] = '\0'; 
+        lerString(title, sizeof(title)); 
+        if (title[0] == 27) {  
+            consoleMessage("Operação cancelada");
+            return; 
+        }
 
-        printf("\nDescrição da tarefa (opcional, maxima 100 chars): ");  
-        fgets(str, sizeof(str), stdin);
-        str[strcspn(str, "\n")] = '\0'; 
+        printf("\nDescrição da tarefa (opcional, max: 100 chars): ");  
+        lerString(str, sizeof(str)); 
+        if (str[0] == 27) {  
+            consoleMessage("Operação cancelada");
+            return; 
+        }
 
+        printf("\nDefina a prioridade (Baixa, Media, Alta): ");  
+        lerString(prioridadeStr, sizeof(prioridadeStr));    
+        if(prioridadeStr[0] == 27){  
+            consoleMessage("Operação cancelada");
+            return; 
+        }
 
-        printf("\nDefina a prioridade (1- baixa, 2-media, 3-alta): ");  
-        scanf("%d", &prioridade);
+        if(strcasecmp(prioridadeStr, "Alta") == 0) {
+            strcpy(prioridadeStr, "Alta"); 
+            prioridade = 3; 
+        }
+        else if(strcasecmp(prioridadeStr, "Media") == 0) {
+            strcpy(prioridadeStr, "Media"); 
+            prioridade = 2;
+        }
+        else if(strcasecmp(prioridadeStr, "Baixa") == 0) {
+            strcpy(prioridadeStr, "Baixa"); 
+            prioridade = 1; 
+        }
+        else flagError = 1; 
 
         printf("\nClica Enter para concluir");
-        while ((c = getchar()) != '\n');
         getchar();
 
         times++; 
     }
-    while (*title == '\0' || prioridade < 1 || prioridade > 3); 
-
-    newTask(tarefas, prioridade, title, str, count); 
+    while (*title == '\0' || flagError);
+    newTask(tarefas, prioridadeStr, prioridade, title, str); 
     consoleMessage("Tarefa adicionada com sucesso"); 
 }
 
-void newTask(Tarefas *tarefas, int prioridade, char *title, char *descr, int *count){
+void newTask(Tarefas *tarefas, char *prioridadeStr, int prioridade,char *title, char *descr){
+ 
     Tarefas novaTarefa = malloc(sizeof(struct lligada));
     if(novaTarefa == NULL){
         consoleMessage("Erro de alloc"); 
         return; 
-    }
-    novaTarefa->prioridade =  prioridade; 
+    } 
+    strcpy(novaTarefa->prioridadeStr, prioridadeStr); 
     strcpy(novaTarefa->title, title); 
     strcpy(novaTarefa->str, descr); 
-    novaTarefa->num = (*count)++; 
+    novaTarefa->num = count++; 
+    novaTarefa->prioridade = prioridade; 
+   
     if(*tarefas == NULL || prioridade > (*tarefas)->prioridade){
         novaTarefa->prox = *tarefas; 
         *tarefas = novaTarefa;
         return;  
     }
     Tarefas ptr = *tarefas; 
-    while(ptr->prox != NULL && ptr->prox->prioridade > prioridade){
+    while(ptr->prox != NULL && ptr->prox->prioridade >= prioridade){
         ptr = ptr->prox; 
     } 
     novaTarefa->prox = ptr->prox; 
@@ -81,18 +117,18 @@ void showTasks(Tarefas *tarefas){
         } else {
             printf("Descrição: %s\n", (tmp)->str);
         }
-        printf("Prioridade: %d\n", (tmp)->prioridade);
+        printf("Prioridade: %s\n", (tmp)->prioridadeStr);
         tmp = tmp->prox;
         printf("\n"); 
     }
     getchar(); 
 }
 
-void handleCommand(char *command, Tarefas *tarefas, int *count){
+void handleCommand(char *command, Tarefas *tarefas){
     switch (command[0])
     {
         case '1':
-            handleNewTask(tarefas, count); 
+            handleNewTask(tarefas); 
             break;
         case '2':
             system("clear"); 
@@ -125,7 +161,7 @@ void handleCommand(char *command, Tarefas *tarefas, int *count){
  
 
 
-void readCommand(Tarefas *tarefas, int *count){
+void readCommand(Tarefas *tarefas){
     char command[100] = "0";
     while (command[0] != '8') {
         system("clear"); 
@@ -150,7 +186,7 @@ void readCommand(Tarefas *tarefas, int *count){
             consoleMessage("Comando inválido"); 
             command[0] = '0'; 
         } else {
-            handleCommand(command, tarefas, count);  
+            handleCommand(command, tarefas);  
         }
     }
 }
