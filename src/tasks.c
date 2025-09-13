@@ -31,6 +31,21 @@ void printTask(Tarefas tmp){
     printf("Estado: %s", state);   
 }
 
+void printFile(FILE *fptr, Tarefas tmp, int count){
+    fprintf(fptr,"=== Tarefa %d ===\n", tmp->num); 
+    fprintf(fptr,"Titulo: %s\n", (tmp)->title);
+    if((tmp)->str[0] == '\0'){
+        fprintf(fptr,"Sem descrição\n"); 
+    } else {
+            fprintf(fptr,"Descrição: %s\n", (tmp)->str);
+    }
+    fprintf(fptr,"Prioridade: %s\n", (tmp)->prioridadeStr);
+    char state[10] = ""; 
+    if(tmp->taskState == 1) strcpy(state, "Pendente"); 
+    else strcpy(state,"Concluida");
+    fprintf(fptr, "Estado: %s", state);    
+}
+
 
 void handleNewTask(Tarefas *tarefas) {
     char str[101] = ""; 
@@ -390,6 +405,67 @@ void filterTasks(Tarefas *tarefas){
     while(!flagApply); 
 }
 
+void saveFile(Tarefas *tarefas){
+    char fileName[50];
+    char fullPath[200]; 
+    int flag = -1; 
+    int flagCancel = 0; 
+    char ans[10];  
+
+    do {
+        system("clear");
+        printf("Digite o nome do ficheiro sem .txt(q para cancelar): "); 
+        fgets(fileName, sizeof(fileName), stdin);
+        fileName[strcspn(fileName, "\n")] = '\0';  
+        if(strcasecmp(fileName, "q") == 0) flagCancel = 1;
+        else{
+            snprintf(fullPath, sizeof(fullPath), 
+                    "/Users/goncalosousa/Documents/projects/tarefas_project/files/%s.txt", 
+                    fileName);
+
+            FILE *f = fopen(fullPath, "r");
+            if (f != NULL) {
+                fclose(f);
+                system("clear");
+                printf("Esse ficheiro já existe, pretende sobrescrever? (Sim/Nao): ");
+                fgets(ans, sizeof(ans), stdin); 
+                ans[strcspn(ans, "\n")] = '\0'; 
+
+                if (strcasecmp(ans, "Sim") == 0) 
+                    flag = 1; 
+                else 
+                    flag = 0;  
+            } else {
+                flag = 1; 
+            }
+        }
+    } while(flag != 1 && !flagCancel); 
+    if(!flagCancel){
+        FILE *fptr = fopen(fullPath, "w");
+        if (fptr == NULL) {
+            perror("Erro ao abrir ficheiro");
+            return;
+        }
+
+        fprintf(fptr, "=== Lista de tarefas ===\n");
+        Tarefas tmp = *tarefas; 
+        int count = 1;
+        while(tmp != NULL){
+            printFile(fptr, tmp, count);
+            count++;
+            tmp = tmp->prox; 
+        }
+
+        fclose(fptr);
+        consoleMessage("Tarefas guardadas com sucesso!");
+    }
+    else{
+        consoleMessage("Operacao cancelado"); 
+    }
+}
+
+
+
 void handleCommand(char *command, Tarefas *tarefas){
     switch (command[0])
     {
@@ -410,7 +486,7 @@ void handleCommand(char *command, Tarefas *tarefas){
             filterTasks(tarefas);
             break;
         case '6':
-            //guadar em file
+            saveFile(tarefas); 
             break;
         case '7':
             //load from file
