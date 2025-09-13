@@ -4,15 +4,10 @@
 
 
 typedef enum{
-    UNDONE = 0, 
-    DONE = 1,
+    UNDONE = 1, 
+    DONE = 2,
 } State; 
 
-typedef enum{
-    Prioridade = 0, 
-    Status = 1,
-    Both = 2
-} Filter; 
 
 typedef struct lligada {
     int num;
@@ -23,13 +18,6 @@ typedef struct lligada {
     int prioridade; 
     struct lligada *prox;
 } *Tarefas;
-
-typedef struct lligadaF {
-    Filter filter; 
-    char prioridade[10];
-    State status; 
-    struct lligadaF *prox;  
-} *Filters;
 
 
 

@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-Filters filters = NULL; 
 
 void lerString(char *dest, int max) {
     if (fgets(dest, max, stdin) != NULL) {
@@ -27,7 +26,7 @@ void printTask(Tarefas tmp){
     }
     printf("Prioridade: %s\n", (tmp)->prioridadeStr);
     char state[10] = ""; 
-    if(tmp->taskState == 0) strcpy(state, "Pendente"); 
+    if(tmp->taskState == 1) strcpy(state, "Pendente"); 
     else strcpy(state,"Concluida");
     printf("Estado: %s", state);   
 }
@@ -106,7 +105,7 @@ void newTask(Tarefas *tarefas, char *prioridadeStr, int prioridade,char *title, 
     strcpy(novaTarefa->title, title); 
     strcpy(novaTarefa->str, descr);  
     novaTarefa->prioridade = prioridade; 
-    novaTarefa->taskState = 0; 
+    novaTarefa->taskState = 1; 
    
     if(*tarefas == NULL || prioridade > (*tarefas)->prioridade){
         novaTarefa->prox = *tarefas; 
@@ -187,7 +186,7 @@ void markAsDone(Tarefas *tarefas){
             consoleMessage("Nao ha tarefas para concluir");
             return;
     }
-    int num = -1;
+    int num = -2;
     int times = 0; 
     int flag = 0; 
     do{
@@ -204,7 +203,7 @@ void markAsDone(Tarefas *tarefas){
         if(num != -1){
             while(tmp != NULL){
                 if(tmp->num == num){
-                    tmp->taskState = 1; 
+                    tmp->taskState = 2; 
                     flag =1; 
                     break; 
                 }
@@ -217,39 +216,43 @@ void markAsDone(Tarefas *tarefas){
         }
         times++; 
     } 
-    while(num == -1 || !flag);  
+    while(num == -2 || !flag);  
     consoleMessage("Tarefa marcada como concluida"); 
 }
 
 
 void handleFilterStatus(Tarefas *tarefas){
-    int statusFilter = -1; 
+    int statusFilter = 0; 
     int times = 0; 
     do{
         if(times > 0){
             consoleMessage("Status errado, escolha 0 ou 1"); 
             system("clear"); 
         }
-        printf("Digite o Status desejado (0- pendente, 1-concluida): ");
+        printf("Digite o Status desejado (1- pendente, 2-concluida): ");
         scanf("%d", &statusFilter);
         int c;
         while ((c = getchar()) != '\n' && c != EOF);
         times++;  
     }
-    while(statusFilter != 0 && statusFilter != 1);
+    while(statusFilter != 1 && statusFilter != 2);
     Tarefas tmp = *tarefas; 
     system("clear");
     printf("=== Lista de Tarefas ===\n"); 
     printf("\n");
+    int count = 0; 
     while(tmp != NULL){
         if(tmp->taskState == statusFilter){
             printTask(tmp); 
             printf("\n");
+            count++; 
         }
         tmp = tmp->prox;
     }
-        getchar(); 
-    return; 
+    if(count == 0){
+        consoleMessage("Nenhuma tarefa nestas condicoes"); 
+    }
+    else getchar(); 
 }
 
 void handleFilterPriority(Tarefas *tarefas){
@@ -285,16 +288,75 @@ void handleFilterPriority(Tarefas *tarefas){
     system("clear");
     printf("=== Lista de Tarefas ===\n"); 
     printf("\n");
+    int count = 0; 
     while(tmp != NULL){
         if(tmp->prioridade == prioridade){
             printTask(tmp);
             printf("\n"); 
+            count++; 
         }
         tmp = tmp->prox; 
     }
-    getchar(); 
-    return;
+    if(count == 0){
+        consoleMessage("Nenhuma tarefa nestas condicoes"); 
+    }
+    else getchar(); 
 }
+
+void handleBoth(Tarefas *tarefas){
+    char prioridadeStr[10] = ""; 
+    int prioridade = 0; 
+    int valida = 0; 
+    int statusFilter = 0; 
+    int times = 0; 
+    do{
+        if(times > 0){
+            consoleMessage("Prioridade ou status errado"); 
+            system("clear"); 
+        }
+        printf("Digite a Prioridade desejada (Alta, Media ou Baixa): ");
+        fgets(prioridadeStr, sizeof(prioridadeStr), stdin); 
+        prioridadeStr[strcspn(prioridadeStr, "\n")] = '\0'; 
+        if(strcasecmp(prioridadeStr, "Alta") == 0) {
+            valida = 1; 
+            prioridade = 3; 
+        }
+        else if(strcasecmp(prioridadeStr, "Media") == 0){
+            valida = 1; 
+            prioridade = 2; 
+       }
+        else if (strcasecmp(prioridadeStr, "Baixa") == 0){
+            valida = 1; 
+            prioridade = 1; 
+        }
+        else{} 
+        times++;  
+        printf("\nDigite o Status desejado (1 - Pendente ou 2 - Concluida): ");
+        scanf("%d", &statusFilter);
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+        times++;  
+    }
+    while(!valida && statusFilter != 1 && statusFilter != 2); 
+    system("clear");
+    printf("=== Lista de Tarefas ===\n"); 
+    printf("\n");
+    Tarefas tmp = *tarefas; 
+    int count = 0; 
+    while(tmp != NULL){
+        if(tmp->taskState == statusFilter && tmp->prioridade ==  prioridade){
+            printTask(tmp); 
+            count++; 
+            printf("\n"); 
+        }
+        tmp = tmp->prox;
+    }
+    if(count == 0){
+        consoleMessage("Nenhuma tarefa nestas condicoes"); 
+    }
+    else getchar(); 
+}
+
 
 void filterTasks(Tarefas *tarefas){
     if(*tarefas == NULL){
@@ -304,76 +366,25 @@ void filterTasks(Tarefas *tarefas){
     }
     char filterStr[20] = ""; 
     int flagApply = 0; 
-    int times2 = 0; 
     do{
-        if(times2 > 0){
-            consoleMessage("Categoria invalida, escolha Prioridade, Status ou Ambos");
-        }
         system("clear"); 
-        printf("Qual categoria deseja usar para filtrar(Prioridade, Status ou Ambos): "); 
+        printf("Qual categoria deseja usar para filtrar(Prioridade, Status ou Ambos (-1 para sair)): "); 
         fgets(filterStr, sizeof(filterStr), stdin); 
         filterStr[strcspn(filterStr, "\n")] = '\0'; 
-        if(strcasecmp(filterStr, "Prioridade") != 0 && strcasecmp(filterStr, "Status") != 0 && strcasecmp(filterStr, "Ambos") != 0){
-            times2++; 
+        if(strcasecmp(filterStr, "Status") == 0){
+            handleFilterStatus(tarefas); 
         }
-        else{ 
-            if(strcasecmp(filterStr, "Status") == 0){
-                handleFilterStatus(tarefas); 
-                flagApply = 1; 
-            }
-            else if (strcasecmp(filterStr, "Prioridade") == 0){
-                handleFilterPriority(tarefas);
-                flagApply = 1; 
-            }
-            else{
-                char prioridadeStr[10] = ""; 
-                int prioridade = 0; 
-                int valida = 0; 
-                int statusFilter = -1; 
-                int times = 0; 
-                do{
-                    if(times > 0){
-                        consoleMessage("Prioridade ou status errado"); 
-                        system("clear"); 
-                    }
-                    printf("Digite a Prioridade desejada (Alta, Media ou Baixa): ");
-                    fgets(prioridadeStr, sizeof(prioridadeStr), stdin); 
-                    prioridadeStr[strcspn(prioridadeStr, "\n")] = '\0'; 
-                    if(strcasecmp(prioridadeStr, "Alta") == 0) {
-                        valida = 1; 
-                        prioridade = 3; 
-                    }
-                    else if(strcasecmp(prioridadeStr, "Media") == 0){
-                        valida = 1; 
-                        prioridade = 2; 
-                    }
-                    else if (strcasecmp(prioridadeStr, "Baixa") == 0){
-                        valida = 1; 
-                        prioridade = 1; 
-                    }
-                    else{} 
-                    times++;  
-                    printf("\nDigite o Status desejado (0- pendente, 1-concluida): ");
-                    scanf("%d", &statusFilter);
-                    int c;
-                    while ((c = getchar()) != '\n' && c != EOF);
-                    times++;  
-                }
-                while(!valida && statusFilter != 0 && statusFilter != 1); 
-                system("clear");
-                printf("=== Lista de Tarefas ===\n"); 
-                printf("\n");
-                Tarefas tmp = *tarefas; 
-                while(tmp != NULL){
-                    if(tmp->taskState == statusFilter && tmp->prioridade ==  prioridade){
-                        printTask(tmp); 
-                        printf("\n"); 
-                    }
-                    tmp = tmp->prox;
-                }
-                flagApply = 1; 
-                getchar(); 
-            }
+        else if (strcasecmp(filterStr, "Prioridade") == 0){
+            handleFilterPriority(tarefas);
+        }
+        else if(strcasecmp(filterStr, "Ambos") == 0){
+            handleBoth(tarefas);
+        }
+        else if(strcasecmp(filterStr, "-1") == 0){
+            flagApply = 1; 
+        }
+        else{
+            consoleMessage("Categoria invalida, escolha Prioridade, Status ou Ambos");
         }
     }
     while(!flagApply); 
