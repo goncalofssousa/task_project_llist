@@ -1,6 +1,18 @@
-=== Lista de tarefas ===
-=== Tarefa 1 ===
-Titulo: gym 
-Sem descrição
-Prioridade: Alta
-Estado: Pendente
+start
+ir a universidade
+amanha
+Alta
+Pendente
+end
+start
+tetse
+adsa
+Media
+Concluida
+end
+start
+teste so
+testar
+Baixa
+Pendente
+end

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int nextId = 1;
 
 void lerString(char *dest, int max) {
     if (fgets(dest, max, stdin) != NULL) {
@@ -17,7 +18,7 @@ void lerString(char *dest, int max) {
 }
 
 void printTask(Tarefas tmp){
-    printf("=== Tarefa %d ===\n", tmp->num); 
+    printf("=== Tarefa %d ===\n", tmp->id); 
     printf("Titulo: %s\n", (tmp)->title);
     if((tmp)->str[0] == '\0'){
         printf("Sem descrição\n"); 
@@ -28,22 +29,23 @@ void printTask(Tarefas tmp){
     char state[10] = ""; 
     if(tmp->taskState == 1) strcpy(state, "Pendente"); 
     else strcpy(state,"Concluida");
-    printf("Estado: %s", state);   
+    printf("Estado: %s\n", state);   
 }
 
-void printFile(FILE *fptr, Tarefas tmp, int count){
-    fprintf(fptr,"=== Tarefa %d ===\n", tmp->num); 
-    fprintf(fptr,"Titulo: %s\n", (tmp)->title);
+void printFile(FILE *fptr, Tarefas tmp){
+    fprintf(fptr,"start\n"); 
+    fprintf(fptr,"%s\n", (tmp)->title);
     if((tmp)->str[0] == '\0'){
-        fprintf(fptr,"Sem descrição\n"); 
+        fprintf(fptr,"NULL\n"); 
     } else {
-            fprintf(fptr,"Descrição: %s\n", (tmp)->str);
+            fprintf(fptr,"%s\n", (tmp)->str);
     }
-    fprintf(fptr,"Prioridade: %s\n", (tmp)->prioridadeStr);
+    fprintf(fptr,"%s\n", (tmp)->prioridadeStr);
     char state[10] = ""; 
     if(tmp->taskState == 1) strcpy(state, "Pendente"); 
     else strcpy(state,"Concluida");
-    fprintf(fptr, "Estado: %s", state);    
+    fprintf(fptr, "%s\n", state); 
+    fprintf(fptr,"end\n");    
 }
 
 
@@ -105,12 +107,12 @@ void handleNewTask(Tarefas *tarefas) {
         times++; 
     }
     while (*title == '\0' || flagError);
-    newTask(tarefas, prioridadeStr, prioridade, title, str); 
+    newTask(tarefas, prioridadeStr, prioridade, title, str, 1); 
     consoleMessage("Tarefa adicionada com sucesso"); 
 }
 
 
-void newTask(Tarefas *tarefas, char *prioridadeStr, int prioridade,char *title, char *descr){ 
+void newTask(Tarefas *tarefas, char *prioridadeStr, int prioridade,char *title, char *descr, int state){ 
     Tarefas novaTarefa = malloc(sizeof(struct lligada));
     if(novaTarefa == NULL){
         consoleMessage("Erro de alloc"); 
@@ -120,7 +122,8 @@ void newTask(Tarefas *tarefas, char *prioridadeStr, int prioridade,char *title, 
     strcpy(novaTarefa->title, title); 
     strcpy(novaTarefa->str, descr);  
     novaTarefa->prioridade = prioridade; 
-    novaTarefa->taskState = 1; 
+    novaTarefa->taskState = state; 
+    novaTarefa->id = (nextId)++; 
    
     if(*tarefas == NULL || prioridade > (*tarefas)->prioridade){
         novaTarefa->prox = *tarefas; 
@@ -136,7 +139,6 @@ void newTask(Tarefas *tarefas, char *prioridadeStr, int prioridade,char *title, 
 }
 
 void showTasks(Tarefas *tarefas){
-    int count = 1; 
     if(*tarefas == NULL){
         consoleMessage("Lista de tarefas vazia"); 
     }
@@ -145,11 +147,9 @@ void showTasks(Tarefas *tarefas){
         printf("=== Lista de Tarefas ===\n"); 
         printf("\n"); 
         while(tmp != NULL){
-            tmp->num = count; 
             printTask(tmp); 
             tmp = tmp->prox;
             printf("\n"); 
-            count ++; 
         }
         getchar(); 
     }
@@ -176,7 +176,7 @@ void removeTask(Tarefas *tarefas){
         Tarefas *tmp = tarefas;
         if(num != -1){
             while(*tmp != NULL){
-                if((*tmp)->num == num){
+                if((*tmp)->id == num){
                     Tarefas tmp2 = *tmp; 
                     *tmp = (*tmp)->prox;
                     free(tmp2); 
@@ -217,7 +217,7 @@ void markAsDone(Tarefas *tarefas){
         Tarefas tmp = *tarefas;
         if(num != -1){
             while(tmp != NULL){
-                if(tmp->num == num){
+                if(tmp->id == num){
                     tmp->taskState = 2; 
                     flag =1; 
                     break; 
@@ -445,14 +445,10 @@ void saveFile(Tarefas *tarefas){
         if (fptr == NULL) {
             perror("Erro ao abrir ficheiro");
             return;
-        }
-
-        fprintf(fptr, "=== Lista de tarefas ===\n");
+        }   
         Tarefas tmp = *tarefas; 
-        int count = 1;
         while(tmp != NULL){
-            printFile(fptr, tmp, count);
-            count++;
+            printFile(fptr, tmp);
             tmp = tmp->prox; 
         }
 
@@ -462,6 +458,75 @@ void saveFile(Tarefas *tarefas){
     else{
         consoleMessage("Operacao cancelado"); 
     }
+}
+
+void loadFile(Tarefas *tarefas){
+    char fileName[50];
+    char fullPath[200]; 
+    char myString[100];
+    int count = 0; 
+    char str[101] = "";
+    char title[51] = ""; 
+    char prioridadeStr[10] = ""; 
+    int prioridade =0 ; 
+    int state = 0; 
+    int done = 0; 
+    do {
+        system("clear"); 
+        printf("Digite o nome do ficheiro a carregar: "); 
+        fgets(fileName, sizeof(fileName), stdin); 
+        fileName[strcspn(fileName, "\n")] = '\0'; 
+        snprintf(fullPath, sizeof(fullPath), 
+                "/Users/goncalosousa/Documents/projects/tarefas_project/files/%s.txt", 
+                fileName);
+        FILE *fptr = fopen(fullPath,"r"); 
+        if(fptr != NULL){
+            while(fgets(myString, sizeof(myString), fptr)) {
+                myString[strcspn(myString, "\n")] = '\0';
+                switch (count)
+                {
+                case 0:
+                    title[0] = '\0'; 
+                    str[0] = '\0'; 
+                    prioridadeStr[0] = '\0'; 
+                    count++; 
+                    break;
+                case 1:
+                    strcpy(title, myString);
+                    count++; 
+                    break; 
+                case 2: 
+                    strcpy(str, myString); 
+                    count++; 
+                    break; 
+                case 3: 
+                    if(strcmp(myString, "Alta") == 0) prioridade = 3; 
+                    else if (strcmp(myString, "Media") == 0) prioridade = 2; 
+                    else prioridade = 1; 
+                    strcpy(prioridadeStr, myString);
+                    count++; 
+                    break; 
+                case 4: 
+                    if(strcmp(myString, "Pendente") == 0) {
+                        state = 1; 
+                    }
+                    else state = 0; 
+                    count++; 
+                    break; 
+                case 5:
+                    newTask(tarefas, prioridadeStr,  prioridade,  title,  str, state);
+                    count = 0; 
+                    break; 
+                default: 
+                    break; 
+                }
+            }
+            done = 1; 
+        }
+        else consoleMessage("O ficheiro nao existe, tente novamente"); 
+    }
+    while(!done); 
+    consoleMessage("Ficheiro carregado com sucesso"); 
 }
 
 
@@ -489,7 +554,7 @@ void handleCommand(char *command, Tarefas *tarefas){
             saveFile(tarefas); 
             break;
         case '7':
-            //load from file
+            loadFile(tarefas); 
             break;
         case '8':  
             break; 

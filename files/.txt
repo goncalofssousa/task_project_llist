@@ -1,6 +1,0 @@
-=== Lista de tarefas ===
-=== Tarefa 0 ===
-Titulo: pol
-Sem descrição
-Prioridade: Baixa
-Estado: Pendente

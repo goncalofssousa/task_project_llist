@@ -10,7 +10,7 @@ typedef enum{
 
 
 typedef struct lligada {
-    int num;
+    int id;
     char title[51];
     char str[101];
     char prioridadeStr[10];
@@ -21,7 +21,7 @@ typedef struct lligada {
 
 
 
-void newTask(Tarefas *tarefas, char *prioridadeStr, int prioridade, char *title, char *descr); 
+void newTask(Tarefas *tarefas, char *prioridadeStr, int prioridade, char *title, char *descr, int state); 
 void handleNewTask(Tarefas *tarefas);
 void showTasks(Tarefas *tarefas);
 void handleCommand(char *command, Tarefas *tarefas);
